@@ -1,4 +1,5 @@
 package View;
+// TODO Auto-generated method stub
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -9,281 +10,238 @@ import java.util.ArrayList;
 import java.util.Random;
 import java.util.Scanner;
 
+import Controller.MemberDAO;
+import Controller.MusicController;
+import Controller.PlayDataDAO;
+import Model.MemberDTO;
+import Model.Music;
+import Model.PlayDataDTO;
+
 public class Main {
+
 	public static void main(String[] args) {
-		PlayData data = new PlayData();
-		ArrayList<String> dayGraphic = data.getDayGraphic();
-		ArrayList<String> goodList = data.getGoodList();
-		ArrayList<String> badList = data.getBadList();
-		ArrayList<String> title = data.getTitle();
-		int score = 0;
-		int dday = 20;
+		PlayDataDAO pDao = new PlayDataDAO();
+		ArrayList<String> text = new ArrayList<>();
+
 		boolean login = false;
 		String uid = null;
 
 		Scanner sc = new Scanner(System.in);
 
-		try {
-			Class.forName("oracle.jdbc.driver.OracleDriver");
-			Connection conn = null;
-			PreparedStatement psmt = null;
-			ResultSet rs = null;
+		text = pDao.getTitle();
+		for (int i = 0; i < text.size(); i++) {
+			System.out.println(text.get(i));
+		}
 
-			String url = "jdbc:oracle:thin:@project-db-cgi.smhrd.com:1524:xe";
-			String user = "cgi_24IS_cloud3_p1_2";
-			String password = "smhrd2";
+		System.out.println("*******  게임을 시작합니다  ********  ");
 
-			conn = DriverManager.getConnection(url, user, password);
+		// 메인메뉴
+		while (true) {
+			int score = 0;
+			int dday = 20;
+			MemberDAO dao = new MemberDAO();
 
-			for (int i = 0; i < title.size(); i++) {
-				System.out.println(title.get(i));
-			}
+			System.out.println("===== 메인메뉴 =====");
+			System.out.println("[1] 회원가입 [2] 로그인 [3] 종료");
 
-			System.out.println("*******  게임을 시작합니다  ********  ");
+			int choice = sc.nextInt();
+			sc.nextLine();
 
-			// 메인메뉴
-			while (true) {
-				System.out.println("메인메뉴");
-				System.out.println("[1] 회원가입 [2] 로그인 [3] 종료");
+			if (choice == 1) {// **회원가입
+				System.out.print("ID 입력 : ");
+				String id = sc.nextLine();
+				System.out.print("PW 입력 : ");
+				String pw = sc.nextLine();
+				System.out.print("성별 입력 : ");
+				String gender = sc.nextLine();
+				System.out.print("닉네임 입력 : ");
+				String name = sc.nextLine();
 
-				int choice = sc.nextInt();
-				sc.nextLine(); // 버퍼비우기
+				MemberDAO joinDAO = new MemberDAO();
+				MemberDTO dto = new MemberDTO(id, pw);
+				int row1 = dao.joinUser(dto);
 
-				if (choice == 1) {// [1] 회원가입
-					System.out.print("ID 입력 : ");
-					String id = sc.next();
-					System.out.print("PW 입력 : ");
-					String pw = sc.next();
-					System.out.print("성별 입력 : ");
-					String gender = sc.next();
-					System.out.print("닉네임 입력 : ");
-					String name = sc.next();
+				dto = new MemberDTO(id, gender, score, dday, name);
+				int row2 = dao.joinIntern(dto);
 
-					String sql = "INSERT  INTO TB_USER VALUES(?,?)";
-					psmt = conn.prepareStatement(sql);
-					psmt.setString(1, id);
-					psmt.setString(2, pw);
-
-					int row1 = psmt.executeUpdate();
-
-					sql = "INSERT INTO TB_INTERN VALUES(?,?,?,?,?)";
-					psmt = conn.prepareStatement(sql);
-					psmt.setString(1, id);
-					psmt.setString(2, gender);
-					psmt.setInt(3, score);
-					psmt.setInt(4, dday);
-					psmt.setString(5, name);
-
-					int row2 = psmt.executeUpdate();
-					
-					if (row1 > 0 && row2 > 0) {
-						System.out.println("회원가입 성공");
-						
-					} else {
-						System.out.println("회원가입 실패");
-					}
-				} else if (choice == 2) {// **로그인
-					System.out.print("ID 입력 : ");
-					String id = sc.next();
-					System.out.print("PW 입력 : ");
-					String pw = sc.next();
-
-					String sql = "SELECT * FROM TB_USER WHERE USER_ID=? AND USER_PW=?";
-					psmt = conn.prepareStatement(sql);
-					psmt.setString(1, id);
-					psmt.setString(2, pw);
-
-					rs = psmt.executeQuery();
-
-					if (rs.next() == true) {
-						System.out.println("로그인성공");
-						uid = rs.getString("USER_ID");
-						System.out.println(uid + " 님 환영합니다~~");
-						System.out.println("[1] 출근 [2] 회원정보 [3] 로그아웃");
-						login = true;
-
-					} else {
-						System.out.println("로그인 실패");
-						System.out.println("아이디나 비밀번호를 다시 확인해보세요");
-
-					}
-
-				} else if(choice == 3) { // [3] 종료
-					break;
-
+				if (row1 + row2 > 1) {
+					System.out.println("회원가입 성공");
+				} else {
+					System.out.println("회원가입 실패");
 				}
 
-				// 육성메뉴
-		 
-					while (login) {
-						choice = sc.nextInt();
-						sc.nextLine();
+			} else if (choice == 2) {// **로그인
+				System.out.print("ID 입력 : ");
+				String id = sc.next();
+				System.out.print("PW 입력 : ");
+				String pw = sc.next();
 
-						if (choice == 1) {
-							Random rand = new Random();
-							boolean luck = rand.nextBoolean();
-							boolean isWorker = true;
-							int idx = 0;
+				MemberDTO dto = new MemberDTO(id, pw);
+				uid = dao.login(dto);
 
-							ArrayList<String> quiz = data.getQuiz();
-							ArrayList<String> qAnswer = data.getqAnswer();
+				if (uid != null) {
+					login = true;
+					System.out.println("로그인 성공");
+					System.out.println(uid + "님 환영합니다~~");
+				} else {
+					System.out.println("로그인실패");
+				}
 
-							String sql = "SELECT IT_SCORE, IT_DDAY FROM TB_INTERN WHERE USER_ID = ?";
-							psmt = conn.prepareStatement(sql);
-							psmt.setString(1, uid);
+			} else if (choice == 3) {
+				break;
 
-							rs = psmt.executeQuery();
-							rs.next();
-							score = rs.getInt("IT_SCORE");
-							dday = rs.getInt("IT_DDAY");
+			}
 
-							if (isWorker && dday < 0) {
-								System.out.println("인턴사원은 드디어 정규직으로 승진하였습니다. 축하드립니다!");
-								break;
-								// 어디서 입력받아서 넘겨줄 것인가,,,
-							}
+			// 육성메뉴
+			while (login) {
+				System.out.println("[1] 출근 [2] 회원정보 [3] 로그아웃");
+				choice = sc.nextInt();
+				sc.nextLine();
 
-							while (isWorker && dday >= 0) {
-								System.out.println(dayGraphic.get(dday--));
+				if (choice == 1) {
+					Random rand = new Random();
+					boolean luck = rand.nextBoolean();
+					boolean isWorker = true;
+					int idx = 0;
 
-								for (int i = 0; i < 2; i++) {
-									System.out.println((i == 0) ? "오전업무시간입니다." : "오후업무시간입니다.");
-									if (luck) {
-										System.out.println(goodList.get(rand.nextInt(goodList.size())));
-										
-										// 퀴즈 DB에서 불러오기
-										idx = rand.nextInt(quiz.size());
-										System.out.println(quiz.get(idx));
-										String answer = sc.nextLine();
+					ArrayList<String> quiz = pDao.getQuiz();
+					ArrayList<String> qAnswer = pDao.getqAnswer();
 
-										if (answer.equals(qAnswer.get(idx))) {
-											score += 10;
-											System.out.println("+" + 10 + "점! 인사평가점수가 올랐습니다!\n");
-											System.out.println();
-										} else {
-											score -= 5;
-											if (score < 0) {
-												System.out.println("인사평가점수가 0점 이하입니다!");
-												System.out.println("안타깝게도 인턴은 해고되었습니다...\n");
-												isWorker = false;
-												break;
-											} else {
-												System.out.println("-" + 5 + "점.. 인사평가점수가 떨어졌습니다..\n");
-											}
-										}
+					MemberDTO dto = dao.select();
+
+					score = dto.getScore();
+					dday = dto.getDday();
+
+					if (isWorker && dday < 0) {
+						System.out.println("인턴사원은 드디어 정규직으로 승진하였습니다. 축하드립니다!");
+						System.out.println("[1]새로하기 \t[2]이어하기");
+						// 어디서 입력받아서 넘겨줄 것인가,,,
+					}
+
+					while (isWorker && dday >= 0) {
+						System.out.println(pDao.getDayGraphic().get(dday--));
+
+						for (int i = 0; i < 2; i++) {
+							System.out.println((i == 0) ? "오전업무시간입니다." : "오후업무시간입니다.");
+							if (luck) {
+								System.out.println(pDao.getGoodList().get(rand.nextInt(pDao.getGoodList().size())));
+								// 퀴즈 DB에서 불러오기
+
+								MusicController con = new MusicController();
+
+								System.out.println(" 업무 : 노래맞추기~~~");
+								System.out.println("===== 재생 =====");
+								Music m = con.play();
+
+								System.out.println("정답을 입력하세요");
+								String answer = sc.nextLine();
+
+								if (answer.equals(m.getTitle())) {
+									score += 10;
+									System.out.println("+" + 10 + "점! 인사평가점수가 올랐습니다!\n");
+									System.out.println();
+									con.stop();
+
+								} else {
+									score -= 5;
+									con.stop();
+									if (score < 0) {
+										System.out.println("인사평가점수가 0점 이하입니다!");
+										System.out.println("안타깝게도 인턴은 해고되었습니다...\n");
+										isWorker = false;
+										break;
 									} else {
-										System.out.println(badList.get(rand.nextInt(badList.size())));
-										
-										// 퀴즈 DB에서 불러오기
-										idx = rand.nextInt(quiz.size());
-										System.out.println(quiz.get(idx));
-										String answer = sc.nextLine();
-
-										if (answer.equals(qAnswer.get(idx))) {
-											score += 5;
-											System.out.println("+" + 5 + "점! 인사평가점수가 올랐습니다!\n");
-											System.out.println();
-										} else {
-											score -= 10;
-											if (score < 0) {
-												System.out.println("인사평가점수가 0점 이하입니다!");
-												System.out.println("안타깝게도 인턴은 해고되었습니다...\n");
-												isWorker = false;
-												break;
-											} else {
-												System.out.println("-" + 10 + "점.. 인사평가점수가 떨어졌습니다..\n");
-											}
-										}
-										
+										System.out.println("-" + 5 + "점.. 인사평가점수가 떨어졌습니다..\n");
 									}
 								}
+							} else {
+								System.out.println(pDao.getBadList().get(rand.nextInt(pDao.getBadList().size())));
+								// 퀴즈 DB에서 불러오기
+								idx = rand.nextInt(quiz.size());
+								System.out.println(quiz.get(idx));
+								String answer = sc.nextLine();
 
-								// DB에서 인턴 정보 불러다가 출력
-								System.out.println("===== 정산 =====");
-								sql = "UPDATE TB_INTERN SET IT_SCORE=?, IT_DDAY = ? WHERE USER_ID=?";
-
-								psmt = conn.prepareStatement(sql);
-								psmt.setInt(1, score);
-								psmt.setInt(2, dday);
-								psmt.setString(3, uid);
-								psmt.executeUpdate();
-
-								sql = "SELECT IT_NAME,USER_ID,IT_GENDER,IT_SCORE,IT_DDAY FROM TB_INTERN WHERE USER_ID = ?";
-								psmt = conn.prepareStatement(sql);
-								psmt.setString(1, uid);
-								rs = psmt.executeQuery();
-								rs.next();
-								System.out.println("닉네임\t성별\t인사점수\t출근일수");
-
-								System.out.print(rs.getString("IT_NAME") + "\t");
-								System.out.print(rs.getString("IT_GENDER") + "\t");
-								System.out.print(rs.getString("IT_SCORE") + "\t");
-								System.out.println(rs.getString("IT_DDAY") + "\t");
-								break;
-
-							}
-							
-						} else if (choice == 2) {
-							System.out.println(uid);
-
-							System.out.println("=== 인턴 정보 ===");
-							String sql = "SELECT IT_NAME,USER_ID,IT_GENDER,IT_SCORE,IT_DDAY FROM TB_INTERN WHERE USER_ID = ?";
-							psmt = conn.prepareStatement(sql);
-							psmt.setString(1, uid);
-							rs = psmt.executeQuery();
-							rs.next();
-							System.out.println("닉네임\t ID\t성별\t인사점수\t출근일수");
-
-							System.out.print(rs.getString("IT_NAME") + "\t");
-							System.out.print(rs.getString("USER_ID") + "\t");
-							System.out.print(rs.getString("IT_GENDER") + "\t");
-							System.out.print(rs.getString("IT_SCORE") + "\t");
-							System.out.println(rs.getString("IT_DDAY") + "\t");
-							
-							System.out.println("[1] 육성메뉴 [2] 탈퇴");
-							choice = sc.nextInt();
-							sc.nextLine();
-							
-							if(choice == 2) {
-								System.out.println("회원탈퇴를 위한 입력");
-								System.out.print("ID 입력 : ");
-								String id = sc.next();
-								System.out.print("PW 입력 : ");
-								String pw = sc.next();
-
-								sql = "DELETE FROM TB_INTERN WHERE USER_ID = ?";
-								psmt = conn.prepareStatement(sql);
-								psmt.setString(1, id);
-								
-								int row1 = psmt.executeUpdate();
-
-								sql = "DELETE FROM TB_USER WHERE USER_ID =? AND USER_PW =?";
-								psmt = conn.prepareStatement(sql);
-								psmt.setString(1, id);
-								psmt.setString(2, pw);
-
-								int row2 = psmt.executeUpdate();
-
-								if (row1 > 0 && row2 > 0) {
-									login = false;
-									System.out.println("회원탈퇴에 성공!");
+								if (answer.equals(qAnswer.get(idx))) {
+									score += 5;
+									System.out.println("+" + 5 + "점! 인사평가점수가 올랐습니다!\n");
+									System.out.println();
 								} else {
-									System.out.println("회원탈퇴에 실패하였습니다..ㅠㅠ");
-									System.out.println("아이디나 비밀번호를 다시 확인해주세요ㅠㅠ");
+									score -= 10;
+									if (score < 0) {
+										System.out.println("인사평가점수가 0점 이하입니다!");
+										System.out.println("안타깝게도 인턴은 해고되었습니다...\n");
+										isWorker = false;
+										break;
+									} else {
+										System.out.println("-" + 10 + "점.. 인사평가점수가 떨어졌습니다..\n");
+									}
 								}
 							}
-							if(!login) {
-								break;
-							}
-							// 여기는 회원탈퇴가 아니라 로그아웃이에윰
-						} else if (choice == 3) {
-							System.out.println("로그아웃 되었습니다.");
-							login = false;
 						}
+
+						// String id, String gender,int score,int dday,String name
+						// DB에서 인턴 정보 불러다가 출력
+						System.out.println("===== 정산 =====");
+						dao.update(new MemberDTO(score, dday));
+						dto = dao.select();
+						System.out.println("닉네임\t성별\t인사점수\t출근일수");
+
+						System.out.print(dto.getName() + "\t");
+						System.out.print(dto.getGender() + "\t");
+						System.out.print(dto.getScore() + "\t");
+						System.out.println(dto.getDday() + "\t");
+
+						break;
 					}
-				} 
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
+
+				} else if (choice == 2) {
+					MemberDTO dto = dao.select();
+
+					System.out.println("=== 인턴 정보 ===");
+					System.out.println("닉네임\tID\t성별\t인사점수\t출근일수");
+
+					System.out.print(dto.getName() + "\t");
+					System.out.print(dto.getId() + "\t");
+					System.out.print(dto.getGender() + "\t");
+					System.out.print(dto.getScore() + "\t");
+					System.out.print(dto.getDday() + "\t");
+					System.out.println();
+
+					System.out.println("[1] 육성메뉴 [2] 탈퇴");
+					choice = sc.nextInt();
+					sc.nextLine();
+					if (choice == 2) {
+
+						System.out.println("회원탈퇴를 위한 입력");
+						System.out.print("ID 입력 : ");
+						String id = sc.next();
+						System.out.print("PW 입력 : ");
+						String pw = sc.next();
+
+						dao = new MemberDAO();
+						dto = new MemberDTO(id, pw);
+
+						int row = dao.delete(dto);
+						if (row > 0) {
+							System.out.println("회원탈퇴에 성공!");
+						} else {
+							System.out.println("회원탈퇴에 실패하였습니다..ㅠㅠ");
+							System.out.println("아이디나 비밀번호를 다시 확인해주세요ㅠㅠ");
+						}
+
+						login = false;
+
+					}
+
+				} else if (choice == 3) {
+
+					System.out.println("로그아웃");
+					login = false;
+				}
+			} // login 시 while문
+
+		} // while 젤 큰거
+
 	}
+
 }
